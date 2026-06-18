@@ -50,10 +50,10 @@ export default function Login() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="bg-white py-8 px-4 shadow-xl shadow-slate-200/50 sm:rounded-2xl sm:px-10 border border-slate-200/60">
+        <div className="glass-card py-8 px-4 sm:rounded-2xl sm:px-10">
           <form className="space-y-6" onSubmit={handleLogin}>
             {error && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+              <div className="p-3 bg-rose-50/80 backdrop-blur-sm border border-rose-200/50 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 shadow-sm">
                 <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                 <p className="text-sm text-rose-700 font-medium">{error}</p>
               </div>
@@ -75,7 +75,7 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all text-slate-900"
+                  className="block w-full pl-11 pr-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all text-slate-900 shadow-sm"
                   placeholder="you@example.com"
                 />
               </div>
@@ -97,7 +97,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all text-slate-900"
+                  className="block w-full pl-11 pr-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all text-slate-900 shadow-sm"
                   placeholder="••••••••"
                 />
               </div>
@@ -109,7 +109,7 @@ export default function Login() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer"
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-white/50 bg-white/50 rounded cursor-pointer"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-600 cursor-pointer">
                   Remember me
@@ -126,7 +126,7 @@ export default function Login() {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm shadow-indigo-200 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
+                className="glass-button w-full flex justify-center py-2.5 px-4 border border-indigo-500/50 rounded-xl shadow-sm shadow-indigo-200/50 text-sm font-semibold text-white bg-indigo-600/90 hover:bg-indigo-700/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
               >
                 Sign in
               </button>
@@ -136,22 +136,22 @@ export default function Login() {
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200" />
+                <div className="w-full border-t border-slate-200/50" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-3 bg-white text-slate-500 font-medium">Demo Credentials</span>
+                <span className="px-3 bg-slate-50 text-slate-500 font-medium">Demo Credentials</span>
               </div>
             </div>
             <div className="mt-6 text-sm text-slate-600 space-y-3">
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/60 hover:border-slate-300 transition-colors cursor-pointer" onClick={() => { setEmail('admin@broker.com'); setPassword('password123'); }}>
+              <div className="p-3.5 bg-white/40 backdrop-blur-sm rounded-xl border border-white/50 hover:bg-white/60 transition-colors cursor-pointer shadow-sm" onClick={() => { setEmail('admin@broker.com'); setPassword('password123'); }}>
                 <p className="font-bold text-slate-800 mb-0.5">Superadmin</p>
                 <p className="font-mono text-xs text-slate-500">admin@broker.com / password123</p>
               </div>
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/60 hover:border-slate-300 transition-colors cursor-pointer" onClick={() => { setEmail('staff@broker.com'); setPassword('password123'); }}>
+              <div className="p-3.5 bg-white/40 backdrop-blur-sm rounded-xl border border-white/50 hover:bg-white/60 transition-colors cursor-pointer shadow-sm" onClick={() => { setEmail('staff@broker.com'); setPassword('password123'); }}>
                 <p className="font-bold text-slate-800 mb-0.5">Broker Staff</p>
                 <p className="font-mono text-xs text-slate-500">staff@broker.com / password123</p>
               </div>
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/60 hover:border-slate-300 transition-colors cursor-pointer" onClick={() => { setEmail('supervisor@broker.com'); setPassword('password123'); }}>
+              <div className="p-3.5 bg-white/40 backdrop-blur-sm rounded-xl border border-white/50 hover:bg-white/60 transition-colors cursor-pointer shadow-sm" onClick={() => { setEmail('supervisor@broker.com'); setPassword('password123'); }}>
                 <p className="font-bold text-slate-800 mb-0.5">Supervisor</p>
                 <p className="font-mono text-xs text-slate-500">supervisor@broker.com / password123</p>
               </div>

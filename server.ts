@@ -51,27 +51,25 @@ async function startServer() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'Claim Rejected');
       
-      // Aging Logic
+      // Label Logic
       const { data: claims } = await supabase.from('claims')
-        .select('date_reported')
-        .not('status', 'in', '("Claim Settled","Claim Closed","Claim Rejected","Deleted")');
+        .select('label')
+        .neq('status', 'Deleted');
         
-      let newClaims = 0;
-      let inProgress = 0;
-      let delayed = 0;
-      let escalation = 0;
+      let onInsurer = 0;
+      let onBroker = 0;
+      let onInsured = 0;
+      let settledCount = 0;
+      let closedCancel = 0;
       
-      const now = new Date();
       if (claims) {
         claims.forEach(c => {
-          const reported = new Date(c.date_reported);
-          const diffTime = Math.abs(now.getTime() - reported.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          
-          if (diffDays <= 7) newClaims++;
-          else if (diffDays <= 30) inProgress++;
-          else if (diffDays <= 90) delayed++;
-          else escalation++;
+          const lbl = c.label || 'On Broker'; // Default if null
+          if (lbl === 'On Insurer') onInsurer++;
+          else if (lbl === 'On Broker') onBroker++;
+          else if (lbl === 'On Insured') onInsured++;
+          else if (lbl === 'Settled') settledCount++;
+          else if (lbl === 'Closed/Cancel') closedCancel++;
         });
       }
 
@@ -102,10 +100,10 @@ async function startServer() {
           totalActive: totalActive || 0,
           settled: settled || 0,
           underReview: underReview || 0,
-          delayed: delayed + escalation,
+          delayed: onInsurer + onBroker + onInsured, // Changed to active labels count
           rejected: rejected || 0
         },
-        aging: { newClaims, inProgress, delayed, escalation },
+        label: { onInsurer, onBroker, onInsured, settled: settledCount, closedCancel },
         charts: { statusChart, insurerChart, typeChart }
       });
     } catch (error) {
@@ -158,7 +156,7 @@ async function startServer() {
   // Create claim
   app.post('/api/claims', async (req, res) => {
     try {
-      const { client_name, policy_number, insurance_type, insurer_name, date_of_loss, date_reported, claim_amount, currency, remarks, user_id } = req.body;
+      const { client_name, policy_number, insurance_type, insurer_name, date_of_loss, date_reported, claim_amount, currency, remarks, user_id, label } = req.body;
       
       // Generate running number
       const dateObj = new Date();
@@ -187,7 +185,7 @@ async function startServer() {
 
       const { data: newClaim, error } = await supabase.from('claims').insert([{
         claim_number, client_name, policy_number, insurance_type, insurer_name,
-        date_of_loss, date_reported, claim_amount, currency, status, last_update_date, remarks
+        date_of_loss, date_reported, claim_amount, currency, status, last_update_date, remarks, label: label || 'On Broker'
       }]).select().single();
       
       if (error) throw error;
@@ -227,12 +225,15 @@ async function startServer() {
     res.json({ success: true });
   });
 
-  // Update claim status
+  // Update claim status and label
   app.put('/api/claims/:id/status', async (req, res) => {
-    const { status, notes, user_id, settlement_amount } = req.body;
+    const { status, label, notes, user_id, settlement_amount } = req.body;
     const last_update_date = new Date().toISOString();
     
-    const updateData: any = { status, last_update_date };
+    const updateData: any = { last_update_date };
+    if (status) updateData.status = status;
+    if (label) updateData.label = label;
+    
     if (settlement_amount !== undefined) {
       updateData.settlement_amount = settlement_amount;
       if (status === 'Claim Settled') {
@@ -242,9 +243,16 @@ async function startServer() {
     
     await supabase.from('claims').update(updateData).eq('id', req.params.id);
     
+    let activityNote = notes || '';
+    if (!activityNote) {
+      if (status && label) activityNote = `Status changed to ${status}, Label changed to ${label}`;
+      else if (status) activityNote = `Status changed to ${status}`;
+      else if (label) activityNote = `Label changed to ${label}`;
+    }
+    
     await supabase.from('activities').insert([{
       claim_id: req.params.id, date: last_update_date, user_id: user_id || 2,
-      activity: 'Status Updated', notes: notes || `Status changed to ${status}`
+      activity: 'Status/Label Updated', notes: activityNote
     }]);
     
     res.json({ success: true });

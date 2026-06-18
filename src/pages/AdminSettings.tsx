@@ -73,14 +73,14 @@ export default function AdminSettings() {
         {sections.map((section, idx) => {
           const Icon = section.icon;
           return (
-            <div key={idx} className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 flex flex-col items-start transition-all hover:shadow-md">
-              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl mb-5 border border-indigo-100">
+            <div key={idx} className="glass-card rounded-2xl p-6 flex flex-col items-start transition-all hover:shadow-md">
+              <div className="p-3 bg-indigo-50/80 backdrop-blur-sm text-indigo-600 rounded-xl mb-5 border border-indigo-100/50 shadow-sm">
                 <Icon className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 mb-2 tracking-tight">{section.title}</h3>
               <p className="text-sm text-slate-500 mb-6 flex-1 leading-relaxed">{section.description}</p>
               
-              <button className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-100 hover:text-slate-900 transition-colors text-sm">
+              <button className="w-full px-4 py-2.5 bg-white/50 backdrop-blur-sm border border-white/50 text-slate-700 rounded-xl font-medium hover:bg-white/80 hover:text-slate-900 transition-colors text-sm shadow-sm">
                 {section.action}
               </button>
             </div>
@@ -88,8 +88,8 @@ export default function AdminSettings() {
         })}
 
         {/* Danger Zone */}
-        <div className="bg-rose-50/50 rounded-2xl shadow-sm border border-rose-200/60 p-6 flex flex-col items-start md:col-span-2 mt-4">
-          <div className="p-3 bg-rose-100 text-rose-600 rounded-xl mb-5 border border-rose-200">
+        <div className="bg-rose-50/30 backdrop-blur-md rounded-2xl shadow-sm border border-rose-200/50 p-6 flex flex-col items-start md:col-span-2 mt-4">
+          <div className="p-3 bg-rose-100/80 backdrop-blur-sm text-rose-600 rounded-xl mb-5 border border-rose-200/50 shadow-sm">
             <AlertTriangle className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold text-rose-800 mb-2 tracking-tight">Danger Zone</h3>
@@ -100,7 +100,7 @@ export default function AdminSettings() {
           <button 
             onClick={() => setShowResetModal(true)}
             disabled={resetting}
-            className="px-6 py-2.5 bg-rose-600 text-white rounded-xl font-medium hover:bg-rose-700 transition-colors text-sm disabled:opacity-50 shadow-sm shadow-rose-200"
+            className="glass-button px-6 py-2.5 bg-rose-600/90 text-white rounded-xl font-medium hover:bg-rose-700/90 transition-colors text-sm disabled:opacity-50 shadow-sm shadow-rose-200/50"
           >
             {resetting ? 'Resetting...' : 'Reset Database'}
           </button>
@@ -110,8 +110,8 @@ export default function AdminSettings() {
       {/* Reset Confirmation Modal */}
       {showResetModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mb-4">
+          <div className="glass-card rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-rose-100/80 backdrop-blur-sm border border-rose-200/50 flex items-center justify-center mb-4 shadow-sm">
               <AlertTriangle className="w-6 h-6 text-rose-600" />
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">Reset Database</h3>
@@ -121,7 +121,7 @@ export default function AdminSettings() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowResetModal(false)}
-                className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors"
+                className="px-5 py-2.5 text-slate-600 hover:bg-white/50 rounded-xl font-medium transition-colors"
                 disabled={resetting}
               >
                 Cancel
@@ -129,7 +129,7 @@ export default function AdminSettings() {
               <button
                 onClick={handleResetDatabase}
                 disabled={resetting}
-                className="px-5 py-2.5 bg-rose-600 text-white hover:bg-rose-700 rounded-xl font-medium transition-colors shadow-sm shadow-rose-200 disabled:opacity-70 flex items-center gap-2"
+                className="glass-button px-5 py-2.5 bg-rose-600/90 text-white hover:bg-rose-700/90 rounded-xl font-medium transition-colors shadow-sm shadow-rose-200/50 disabled:opacity-70 flex items-center gap-2"
               >
                 {resetting && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 Yes, Reset Database
@@ -143,8 +143,8 @@ export default function AdminSettings() {
       {message && (
         <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div className={clsx(
-            "px-5 py-3.5 rounded-xl shadow-xl font-medium flex items-center gap-3 border",
-            message.type === 'success' ? "bg-white border-emerald-200 text-emerald-800" : "bg-white border-rose-200 text-rose-800"
+            "px-5 py-3.5 rounded-xl shadow-xl font-medium flex items-center gap-3 backdrop-blur-md border",
+            message.type === 'success' ? "bg-emerald-50/90 border-emerald-200/50 text-emerald-800" : "bg-rose-50/90 border-rose-200/50 text-rose-800"
           )}>
             {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <AlertCircle className="w-5 h-5 text-rose-500" />}
             {message.text}

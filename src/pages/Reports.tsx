@@ -22,7 +22,13 @@ export default function Reports() {
     setDownloading(reportName);
     try {
       const res = await fetch('/api/claims');
-      const claims: Claim[] = await res.json();
+      const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error(data.error || 'Failed to fetch claims data (invalid format)');
+      }
+      
+      const claims: Claim[] = data;
 
       // Define CSV headers
       const headers = ['Claim Register Number', 'Insured Name', 'Insurer Name', 'Type Of Insurance', 'Date Of Loss', 'Date Of Report', 'Status', 'Amount'];
@@ -71,9 +77,9 @@ export default function Reports() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {reports.map((report, idx) => (
-          <div key={idx} className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 flex flex-col h-full transition-all hover:shadow-md">
+          <div key={idx} className="glass-card rounded-2xl p-6 flex flex-col h-full transition-all hover:shadow-md">
             <div className="flex items-start gap-4 mb-6">
-              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100">
+              <div className="p-3 bg-indigo-50/80 backdrop-blur-sm text-indigo-600 rounded-xl border border-indigo-100/50 shadow-sm">
                 <FileSpreadsheet className="w-6 h-6" />
               </div>
               <div>
@@ -82,11 +88,11 @@ export default function Reports() {
               </div>
             </div>
             
-            <div className="mt-auto pt-5 border-t border-slate-100 flex gap-3">
+            <div className="mt-auto pt-5 border-t border-slate-200/50 flex gap-3">
               <button 
                 onClick={() => handleExportExcel(report.name)}
                 disabled={downloading === report.name}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-colors text-sm font-medium disabled:opacity-70"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white/50 backdrop-blur-sm text-slate-700 border border-white/50 rounded-xl hover:bg-white/80 hover:text-slate-900 transition-colors text-sm font-medium disabled:opacity-70 shadow-sm"
               >
                 {downloading === report.name ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -95,7 +101,7 @@ export default function Reports() {
                 )}
                 Export Excel
               </button>
-              <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-colors text-sm font-medium">
+              <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white/50 backdrop-blur-sm text-slate-700 border border-white/50 rounded-xl hover:bg-white/80 hover:text-slate-900 transition-colors text-sm font-medium shadow-sm">
                 <Download className="w-4 h-4" />
                 Export PDF
               </button>

@@ -17,6 +17,7 @@ export interface Claim {
   claim_amount: number;
   currency: string;
   status: string;
+  label: string;
   last_update_date: string;
   settlement_amount: number | null;
   settlement_date: string | null;
@@ -50,11 +51,12 @@ export interface DashboardMetrics {
   rejected: number;
 }
 
-export interface DashboardAging {
-  newClaims: number;
-  inProgress: number;
-  delayed: number;
-  escalation: number;
+export interface DashboardLabel {
+  onInsurer: number;
+  onBroker: number;
+  onInsured: number;
+  settled: number;
+  closedCancel: number;
 }
 
 export interface ChartData {
@@ -64,7 +66,7 @@ export interface ChartData {
 
 export interface DashboardData {
   metrics: DashboardMetrics;
-  aging: DashboardAging;
+  label: DashboardLabel;
   charts: {
     statusChart: ChartData[];
     insurerChart: ChartData[];

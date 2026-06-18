@@ -29,6 +29,8 @@ const insurers = [
   'PT Great Eastern Life Insurance Indonesia'
 ];
 
+const labels = ['On Insurer', 'On Broker', 'On Insured', 'Settled', 'Closed/Cancel'];
+
 export default function NewClaim() {
   const navigate = useNavigate();
   const userStr = localStorage.getItem('user');
@@ -50,6 +52,7 @@ export default function NewClaim() {
     date_reported: new Date().toISOString().split('T')[0],
     claim_amount: '',
     currency: currencies[0],
+    label: labels[1], // Default to 'On Broker'
     remarks: ''
   });
 
@@ -106,18 +109,18 @@ export default function NewClaim() {
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Register New Claim</h1>
         <button
           onClick={() => navigate('/claims')}
-          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+          className="p-2 text-slate-500 hover:text-slate-700 hover:bg-white/50 rounded-xl transition-colors"
         >
           <X className="w-6 h-6" />
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-8">
+      <div className="glass-card p-8">
         <form onSubmit={handleSubmit} className="space-y-8">
           
           {/* Client & Policy Info */}
           <div>
-            <h3 className="text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100 tracking-tight">Client & Policy Information</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-white/20 tracking-tight">Client & Policy Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Client Name <span className="text-rose-500">*</span></label>
@@ -127,7 +130,7 @@ export default function NewClaim() {
                   required
                   value={formData.client_name}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all"
+                  className="w-full px-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all shadow-sm"
                   placeholder="e.g. Acme Corp"
                 />
               </div>
@@ -139,7 +142,7 @@ export default function NewClaim() {
                   required
                   value={formData.policy_number}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all"
+                  className="w-full px-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all shadow-sm"
                   placeholder="e.g. POL-123456"
                 />
               </div>
@@ -150,7 +153,7 @@ export default function NewClaim() {
                   required
                   value={formData.insurance_type}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all"
+                  className="w-full px-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all shadow-sm"
                 >
                   {insuranceTypes.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
@@ -162,7 +165,7 @@ export default function NewClaim() {
                   required
                   value={formData.insurer_name}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all"
+                  className="w-full px-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all shadow-sm"
                 >
                   <option value="" disabled>Select an insurer</option>
                   {insurers.map(insurer => <option key={insurer} value={insurer}>{insurer}</option>)}
@@ -173,7 +176,7 @@ export default function NewClaim() {
 
           {/* Claim Register Number */}
           <div>
-            <h3 className="text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100 tracking-tight">Claim Register Number</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-white/20 tracking-tight">Claim Register Number</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Date of Loss <span className="text-rose-500">*</span></label>
@@ -183,7 +186,7 @@ export default function NewClaim() {
                   required
                   value={formData.date_of_loss}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all"
+                  className="w-full px-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all shadow-sm"
                 />
               </div>
               <div>
@@ -194,7 +197,7 @@ export default function NewClaim() {
                   required
                   value={formData.date_reported}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all"
+                  className="w-full px-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all shadow-sm"
                 />
               </div>
               <div>
@@ -204,7 +207,7 @@ export default function NewClaim() {
                     name="currency"
                     value={formData.currency}
                     onChange={handleChange}
-                    className="w-24 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all"
+                    className="w-24 px-3 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all shadow-sm"
                   >
                     {currencies.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -216,7 +219,7 @@ export default function NewClaim() {
                     step="0.01"
                     value={formData.claim_amount}
                     onChange={handleChange}
-                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all"
+                    className="flex-1 px-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all shadow-sm"
                     placeholder="0.00"
                   />
                 </div>
@@ -226,7 +229,21 @@ export default function NewClaim() {
 
           {/* Additional Info */}
           <div>
-            <h3 className="text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100 tracking-tight">Additional Information</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-white/20 tracking-tight">Additional Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Initial Label <span className="text-rose-500">*</span></label>
+                <select
+                  name="label"
+                  required
+                  value={formData.label}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all shadow-sm"
+                >
+                  {labels.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </div>
+            </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Remarks / Description</label>
               <textarea
@@ -234,25 +251,25 @@ export default function NewClaim() {
                 rows={4}
                 value={formData.remarks}
                 onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none text-sm transition-all"
+                className="w-full px-4 py-3 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none text-sm transition-all shadow-sm"
                 placeholder="Brief description of the incident..."
               />
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-4 pt-6 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-4 pt-6 border-t border-white/20">
             <button
               type="button"
               onClick={() => navigate('/claims')}
-              className="px-6 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-medium hover:bg-slate-50 transition-colors text-sm"
+              className="px-6 py-2.5 border border-slate-300 text-slate-600 rounded-xl font-medium hover:bg-white/60 transition-colors text-sm backdrop-blur-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-indigo-700 hover:shadow-md transition-all disabled:opacity-70 text-sm"
+              className="flex items-center gap-2 bg-indigo-600/90 backdrop-blur-sm text-white px-6 py-2.5 rounded-xl font-medium hover:bg-indigo-700 hover:shadow-lg transition-all disabled:opacity-70 text-sm border border-indigo-500/50"
             >
               <Save className="w-4 h-4" />
               {loading ? 'Registering...' : 'Register Claim'}

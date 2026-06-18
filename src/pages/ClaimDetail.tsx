@@ -14,8 +14,10 @@ export default function ClaimDetail() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const [newStatus, setNewStatus] = useState('');
+  const [newLabel, setNewLabel] = useState('');
   const [statusNote, setStatusNote] = useState('');
   const [settlementAmount, setSettlementAmount] = useState('');
   
@@ -42,10 +44,21 @@ export default function ClaimDetail() {
     fetch(`/api/claims/${id}`)
       .then(res => res.json())
       .then(data => {
+        if (data.error) {
+          setError(data.error);
+          setLoading(false);
+          return;
+        }
         setClaim(data.claim);
-        setActivities(data.activities);
-        setDocuments(data.documents);
+        setActivities(data.activities || []);
+        setDocuments(data.documents || []);
         setNewStatus(data.claim.status);
+        setNewLabel(data.claim.label || 'On Broker');
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Fetch error:', err);
+        setError('Failed to load claim details');
         setLoading(false);
       });
   };
@@ -57,7 +70,7 @@ export default function ClaimDetail() {
   const handleStatusUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const payload: any = { status: newStatus, notes: statusNote, user_id: user?.id };
+    const payload: any = { status: newStatus, label: newLabel, notes: statusNote, user_id: user?.id };
     if (newStatus === 'Claim Approved' && settlementAmount) {
       payload.settlement_amount = Number(settlementAmount);
     }
@@ -170,6 +183,21 @@ export default function ClaimDetail() {
     setTimeout(() => setMessage(null), 3000);
   };
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="glass-card p-8 flex flex-col items-center gap-4 text-center">
+          <AlertCircle className="w-12 h-12 text-rose-500" />
+          <h2 className="text-xl font-bold text-slate-800">Error</h2>
+          <p className="text-slate-500 font-medium">{error}</p>
+          <Link to="/claims" className="mt-4 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg font-medium hover:bg-indigo-100 transition-colors">
+            Back to Claims
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (loading || !claim) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
@@ -181,6 +209,7 @@ export default function ClaimDetail() {
     );
   }
 
+  const labels = ['On Insurer', 'On Broker', 'On Insured', 'Settled', 'Closed/Cancel'];
   const statuses = [
     'Claim Registered', 'Document Pending', 'Under Assessment', 
     'Under Insurer Review', 'Claim Approved', 'Claim Rejected', 
@@ -207,8 +236,8 @@ export default function ClaimDetail() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200/60">
-        <Link to="/claims" className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-900">
+      <div className="flex items-center gap-4 glass-card p-4 rounded-2xl">
+        <Link to="/claims" className="p-2 hover:bg-white/50 rounded-xl transition-colors text-slate-500 hover:text-slate-900">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
@@ -216,14 +245,14 @@ export default function ClaimDetail() {
           <div className="flex items-center gap-2 text-sm text-slate-500 mt-0.5">
             <span className="font-medium text-slate-700">{claim.client_name}</span>
             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-            <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">{claim.policy_number}</span>
+            <span className="font-mono text-xs bg-white/50 border border-white/50 backdrop-blur-sm px-1.5 py-0.5 rounded text-slate-600">{claim.policy_number}</span>
           </div>
         </div>
         <div className="ml-auto flex items-center gap-3">
           {isSuperadmin && (
             <button
               onClick={handleDelete}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-white/50 backdrop-blur-sm border border-rose-200/50 text-rose-600 hover:bg-rose-50/50 rounded-lg text-sm font-medium transition-colors shadow-sm"
             >
               <Trash2 className="w-4 h-4" />
               Delete
@@ -233,7 +262,7 @@ export default function ClaimDetail() {
       </div>
 
       {/* Progress Indicator */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-8 overflow-x-auto">
+      <div className="glass-card rounded-2xl p-8 overflow-x-auto">
         <div className="min-w-[700px] relative">
           <div className="flex items-center justify-between relative z-10">
             {currentFlow.map((status, index) => {
@@ -247,11 +276,11 @@ export default function ClaimDetail() {
                   {/* Step */}
                   <div className="flex flex-col items-center relative group">
                     <div className={clsx(
-                      "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 bg-white z-10",
-                      isCompleted ? "border-emerald-500 bg-emerald-500 text-white" : "",
-                      isCurrent && !isRejected ? "border-indigo-500 ring-4 ring-indigo-50 text-indigo-600" : "",
-                      isCurrent && isRejected ? "border-rose-500 ring-4 ring-rose-50 text-rose-600" : "",
-                      isFuture ? "border-slate-200 text-transparent" : ""
+                      "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 bg-white/80 backdrop-blur-sm z-10 shadow-sm",
+                      isCompleted ? "border-emerald-500 bg-emerald-500/90 text-white" : "",
+                      isCurrent && !isRejected ? "border-indigo-500 ring-4 ring-indigo-500/20 text-indigo-600" : "",
+                      isCurrent && isRejected ? "border-rose-500 ring-4 ring-rose-500/20 text-rose-600" : "",
+                      isFuture ? "border-slate-200/50 text-transparent" : ""
                     )}>
                       {isCompleted ? (
                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -276,10 +305,10 @@ export default function ClaimDetail() {
                   {/* Connecting Line */}
                   {index < currentFlow.length - 1 && (
                     <div className="flex-1 h-0.5 mx-2 relative z-0">
-                      <div className="absolute inset-0 bg-slate-200 rounded-full"></div>
+                      <div className="absolute inset-0 bg-slate-200/50 rounded-full"></div>
                       <div className={clsx(
                         "absolute inset-0 rounded-full transition-all duration-500",
-                        index < currentIndex ? "bg-emerald-500 w-full" : "w-0"
+                        index < currentIndex ? "bg-emerald-500/80 w-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "w-0"
                       )}></div>
                     </div>
                   )}
@@ -296,14 +325,14 @@ export default function ClaimDetail() {
         {/* Left Column: Details & Updates */}
         <div className="lg:col-span-2 space-y-6">
           {/* Claim Information Card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6">
+          <div className="glass-card rounded-2xl p-6">
             <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 tracking-tight">
               <FileText className="w-5 h-5 text-indigo-500" />
               Claim Information
             </h3>
             <div className="grid grid-cols-2 gap-y-6 gap-x-8">
               <div className="flex gap-3">
-                <div className="mt-0.5 p-2 bg-slate-50 rounded-lg border border-slate-100 h-fit">
+                <div className="mt-0.5 p-2 bg-white/50 backdrop-blur-sm rounded-lg border border-white/50 h-fit shadow-sm">
                   <Shield className="w-4 h-4 text-slate-500" />
                 </div>
                 <div>
@@ -312,7 +341,7 @@ export default function ClaimDetail() {
                 </div>
               </div>
               <div className="flex gap-3">
-                <div className="mt-0.5 p-2 bg-slate-50 rounded-lg border border-slate-100 h-fit">
+                <div className="mt-0.5 p-2 bg-white/50 backdrop-blur-sm rounded-lg border border-white/50 h-fit shadow-sm">
                   <Building2 className="w-4 h-4 text-slate-500" />
                 </div>
                 <div>
@@ -321,7 +350,7 @@ export default function ClaimDetail() {
                 </div>
               </div>
               <div className="flex gap-3">
-                <div className="mt-0.5 p-2 bg-slate-50 rounded-lg border border-slate-100 h-fit">
+                <div className="mt-0.5 p-2 bg-white/50 backdrop-blur-sm rounded-lg border border-white/50 h-fit shadow-sm">
                   <Calendar className="w-4 h-4 text-slate-500" />
                 </div>
                 <div>
@@ -330,7 +359,7 @@ export default function ClaimDetail() {
                 </div>
               </div>
               <div className="flex gap-3">
-                <div className="mt-0.5 p-2 bg-slate-50 rounded-lg border border-slate-100 h-fit">
+                <div className="mt-0.5 p-2 bg-white/50 backdrop-blur-sm rounded-lg border border-white/50 h-fit shadow-sm">
                   <Calendar className="w-4 h-4 text-slate-500" />
                 </div>
                 <div>
@@ -339,7 +368,7 @@ export default function ClaimDetail() {
                 </div>
               </div>
               <div className="flex gap-3">
-                <div className="mt-0.5 p-2 bg-indigo-50 rounded-lg border border-indigo-100 h-fit">
+                <div className="mt-0.5 p-2 bg-indigo-50/50 backdrop-blur-sm rounded-lg border border-indigo-100/50 h-fit shadow-sm">
                   <DollarSign className="w-4 h-4 text-indigo-600" />
                 </div>
                 <div>
@@ -350,7 +379,7 @@ export default function ClaimDetail() {
                         <select
                           value={newCurrency}
                           onChange={(e) => setNewCurrency(e.target.value)}
-                          className="w-20 pl-2 pr-6 py-1.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium appearance-none"
+                          className="w-20 pl-2 pr-6 py-1.5 bg-white/50 backdrop-blur-sm border border-white/50 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium appearance-none shadow-sm"
                         >
                           {currencies.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
@@ -358,21 +387,21 @@ export default function ClaimDetail() {
                           type="number"
                           value={newAmount}
                           onChange={(e) => setNewAmount(e.target.value)}
-                          className="w-32 px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium"
+                          className="w-32 px-3 py-1.5 bg-white/50 backdrop-blur-sm border border-white/50 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium shadow-sm"
                           autoFocus
                         />
                       </div>
                       <button
                         onClick={handleUpdateAmount}
                         disabled={isSavingAmount}
-                        className="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-md transition-colors disabled:opacity-50"
+                        className="p-1.5 bg-emerald-50/80 backdrop-blur-sm text-emerald-600 border border-emerald-200/50 hover:bg-emerald-100/80 rounded-md transition-colors disabled:opacity-50 shadow-sm"
                       >
                         <Check className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setIsEditingAmount(false)}
                         disabled={isSavingAmount}
-                        className="p-1.5 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50"
+                        className="p-1.5 bg-white/50 backdrop-blur-sm text-slate-600 border border-white/50 hover:bg-white/80 rounded-md transition-colors disabled:opacity-50 shadow-sm"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -389,7 +418,7 @@ export default function ClaimDetail() {
                             setNewCurrency(claim.currency);
                             setIsEditingAmount(true);
                           }}
-                          className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                          className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/50 rounded transition-colors"
                           title="Edit Claim Amount"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -400,7 +429,7 @@ export default function ClaimDetail() {
                 </div>
               </div>
               <div className="flex gap-3">
-                <div className="mt-0.5 p-2 bg-emerald-50 rounded-lg border border-emerald-100 h-fit">
+                <div className="mt-0.5 p-2 bg-emerald-50/50 backdrop-blur-sm rounded-lg border border-emerald-100/50 h-fit shadow-sm">
                   <DollarSign className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div>
@@ -415,12 +444,12 @@ export default function ClaimDetail() {
             </div>
           </div>
 
-          {/* Update Status */}
+          {/* Update Status & Label */}
           {canEdit && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6">
+            <div className="glass-card rounded-2xl p-6">
               <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 tracking-tight">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                Update Status
+                Update Status & Label
               </h3>
               <form onSubmit={handleStatusUpdate} className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -428,9 +457,18 @@ export default function ClaimDetail() {
                     <select
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all"
+                      className="w-full px-4 py-2.5 bg-white/50 backdrop-blur-sm border border-white/50 rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all shadow-sm"
                     >
                       {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <select
+                      value={newLabel}
+                      onChange={(e) => setNewLabel(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-white/50 backdrop-blur-sm border border-white/50 rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all shadow-sm"
+                    >
+                      {labels.map(l => <option key={l} value={l}>{l}</option>)}
                     </select>
                   </div>
                   {newStatus === 'Claim Approved' && (
@@ -441,7 +479,7 @@ export default function ClaimDetail() {
                         value={settlementAmount}
                         onChange={(e) => setSettlementAmount(e.target.value)}
                         required
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all"
+                        className="w-full px-4 py-2.5 bg-white/50 backdrop-blur-sm border border-white/50 rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all shadow-sm"
                       />
                     </div>
                   )}
@@ -451,14 +489,14 @@ export default function ClaimDetail() {
                       placeholder="Add a note (optional)"
                       value={statusNote}
                       onChange={(e) => setStatusNote(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all"
+                      className="w-full px-4 py-2.5 bg-white/50 backdrop-blur-sm border border-white/50 rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all shadow-sm"
                     />
                   </div>
                   <button
                     type="submit"
-                    className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-indigo-700 hover:shadow-md transition-all whitespace-nowrap text-sm"
+                    className="glass-button bg-indigo-600/90 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-indigo-700/90 hover:shadow-md transition-all whitespace-nowrap text-sm"
                   >
-                    Update Status
+                    Update
                   </button>
                 </div>
               </form>
@@ -466,7 +504,7 @@ export default function ClaimDetail() {
           )}
 
           {/* Documents */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6">
+          <div className="glass-card rounded-2xl p-6">
             <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 tracking-tight">
               <Upload className="w-5 h-5 text-blue-500" />
               Documents
@@ -474,13 +512,13 @@ export default function ClaimDetail() {
             
             {/* Upload Form */}
             {canEdit && (
-              <form onSubmit={handleFileUpload} className="flex flex-col sm:flex-row gap-4 mb-6 items-end bg-slate-50/50 p-5 rounded-xl border border-slate-200/60">
+              <form onSubmit={handleFileUpload} className="flex flex-col sm:flex-row gap-4 mb-6 items-end bg-white/30 backdrop-blur-sm p-5 rounded-xl border border-white/40 shadow-sm">
                 <div className="flex-1 w-full">
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Document Type</label>
                   <select
                     value={uploadType}
                     onChange={(e) => setUploadType(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all"
+                    className="w-full px-3 py-2.5 bg-white/70 backdrop-blur-sm border border-white/50 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all shadow-sm"
                   >
                     {docTypes.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
@@ -490,13 +528,13 @@ export default function ClaimDetail() {
                   <input
                     type="file"
                     onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-colors cursor-pointer"
+                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50/80 file:text-indigo-700 hover:file:bg-indigo-100/80 transition-colors cursor-pointer"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={!uploadFile}
-                  className="w-full sm:w-auto bg-slate-900 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm h-[42px]"
+                  className="w-full sm:w-auto glass-button bg-slate-900/90 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-slate-800/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm h-[42px]"
                 >
                   Upload
                 </button>
@@ -506,9 +544,9 @@ export default function ClaimDetail() {
             {/* Document List */}
             <div className="space-y-3">
               {documents.map(doc => (
-                <div key={doc.id} className="flex items-center justify-between p-4 border border-slate-200/60 rounded-xl hover:bg-slate-50/80 transition-colors group">
+                <div key={doc.id} className="flex items-center justify-between p-4 border border-white/50 bg-white/40 backdrop-blur-sm rounded-xl hover:bg-white/60 transition-colors group shadow-sm">
                   <div className="flex items-center gap-4">
-                    <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100">
+                    <div className="p-2.5 bg-blue-50/80 backdrop-blur-sm text-blue-600 rounded-lg border border-blue-100/50 shadow-sm">
                       <FileText className="w-5 h-5" />
                     </div>
                     <div>
@@ -525,14 +563,14 @@ export default function ClaimDetail() {
                       href={doc.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-indigo-600 hover:text-indigo-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                      className="text-indigo-600 hover:text-indigo-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-indigo-50/80 transition-colors"
                     >
                       View
                     </a>
                     {isSuperadmin && (
                       <button
                         onClick={() => handleDeleteDocument(doc.id)}
-                        className="text-rose-600 hover:text-rose-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-rose-50 transition-colors opacity-0 group-hover:opacity-100"
+                        className="text-rose-600 hover:text-rose-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-rose-50/80 transition-colors opacity-0 group-hover:opacity-100"
                       >
                         Delete
                       </button>
@@ -541,7 +579,7 @@ export default function ClaimDetail() {
                 </div>
               ))}
               {documents.length === 0 && (
-                <div className="text-center py-8 bg-slate-50/50 rounded-xl border border-slate-200/60 border-dashed">
+                <div className="text-center py-8 bg-white/30 backdrop-blur-sm rounded-xl border border-white/50 border-dashed">
                   <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                   <p className="text-sm font-medium text-slate-900">No documents yet</p>
                   <p className="text-xs text-slate-500 mt-1">Upload supporting documents for this claim.</p>
@@ -552,24 +590,24 @@ export default function ClaimDetail() {
         </div>
 
         {/* Right Column: Activity Log */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 flex flex-col h-[calc(100vh-12rem)] sticky top-24">
+        <div className="glass-card rounded-2xl p-6 flex flex-col h-[calc(100vh-12rem)] sticky top-24">
           <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 tracking-tight">
             <Clock className="w-5 h-5 text-amber-500" />
             Activity Log
           </h3>
           
           <div className="flex-1 overflow-y-auto pr-4 space-y-6 custom-scrollbar">
-            <div className="relative border-l-2 border-slate-100 ml-3.5 space-y-8 pb-4">
+            <div className="relative border-l-2 border-slate-200/50 ml-3.5 space-y-8 pb-4">
               {activities.map((activity, index) => (
                 <div key={activity.id} className="relative pl-6">
-                  <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-white border-2 border-indigo-500 shadow-sm" />
+                  <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-white/80 backdrop-blur-sm border-2 border-indigo-500 shadow-sm" />
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="font-semibold text-slate-900 text-sm">{activity.activity}</span>
                     <span className="text-xs font-medium text-slate-400">{format(new Date(activity.date), 'dd MMM HH:mm')}</span>
                   </div>
                   <p className="text-sm text-slate-600 mb-2 leading-relaxed">{activity.notes}</p>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-600">
+                    <div className="w-4 h-4 rounded-full bg-white/60 backdrop-blur-sm border border-white/50 flex items-center justify-center text-[8px] font-bold text-slate-600 shadow-sm">
                       {activity.user_name.charAt(0)}
                     </div>
                     <p className="text-xs text-slate-500 font-medium">{activity.user_name}</p>
@@ -580,19 +618,19 @@ export default function ClaimDetail() {
           </div>
 
           {canEdit && (
-            <form onSubmit={handleAddNote} className="mt-6 pt-6 border-t border-slate-100">
+            <form onSubmit={handleAddNote} className="mt-6 pt-6 border-t border-slate-200/50">
               <div className="flex gap-2">
                 <input
                   type="text"
                   placeholder="Add a quick note..."
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
-                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all"
+                  className="flex-1 px-4 py-2.5 bg-white/50 backdrop-blur-sm border border-white/50 rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all shadow-sm"
                 />
                 <button
                   type="submit"
                   disabled={!newNote}
-                  className="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100 transition-colors disabled:opacity-50 disabled:bg-slate-50 disabled:text-slate-400"
+                  className="bg-indigo-50/80 backdrop-blur-sm border border-indigo-100/50 text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-100/80 transition-colors disabled:opacity-50 disabled:bg-white/50 disabled:text-slate-400 shadow-sm"
                 >
                   <MessageSquare className="w-5 h-5" />
                 </button>
@@ -605,8 +643,8 @@ export default function ClaimDetail() {
       {/* Claim Deletion Modal */}
       {claimToDelete && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mb-4">
+          <div className="glass-card rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-rose-100/80 backdrop-blur-sm border border-rose-200/50 flex items-center justify-center mb-4 shadow-sm">
               <AlertCircle className="w-6 h-6 text-rose-600" />
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Claim</h3>
@@ -614,13 +652,13 @@ export default function ClaimDetail() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setClaimToDelete(false)}
-                className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors"
+                className="px-5 py-2.5 text-slate-600 hover:bg-white/50 rounded-xl font-medium transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeleteClaim}
-                className="px-5 py-2.5 bg-rose-600 text-white hover:bg-rose-700 rounded-xl font-medium transition-colors shadow-sm shadow-rose-200"
+                className="glass-button px-5 py-2.5 bg-rose-600/90 text-white hover:bg-rose-700/90 rounded-xl font-medium transition-colors shadow-sm shadow-rose-200/50"
               >
                 Yes, Delete Claim
               </button>
@@ -632,8 +670,8 @@ export default function ClaimDetail() {
       {/* Document Deletion Modal */}
       {docToDelete !== null && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mb-4">
+          <div className="glass-card rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-rose-100/80 backdrop-blur-sm border border-rose-200/50 flex items-center justify-center mb-4 shadow-sm">
               <AlertCircle className="w-6 h-6 text-rose-600" />
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Document</h3>
@@ -641,13 +679,13 @@ export default function ClaimDetail() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDocToDelete(null)}
-                className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors"
+                className="px-5 py-2.5 text-slate-600 hover:bg-white/50 rounded-xl font-medium transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeleteDocument}
-                className="px-5 py-2.5 bg-rose-600 text-white hover:bg-rose-700 rounded-xl font-medium transition-colors shadow-sm shadow-rose-200"
+                className="glass-button px-5 py-2.5 bg-rose-600/90 text-white hover:bg-rose-700/90 rounded-xl font-medium transition-colors shadow-sm shadow-rose-200/50"
               >
                 Yes, Delete Document
               </button>
@@ -660,8 +698,8 @@ export default function ClaimDetail() {
       {message && (
         <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div className={clsx(
-            "px-5 py-3.5 rounded-xl shadow-xl font-medium flex items-center gap-3 border",
-            message.type === 'success' ? "bg-white border-emerald-200 text-emerald-800" : "bg-white border-rose-200 text-rose-800"
+            "px-5 py-3.5 rounded-xl shadow-xl font-medium flex items-center gap-3 backdrop-blur-md border",
+            message.type === 'success' ? "bg-emerald-50/90 border-emerald-200/50 text-emerald-800" : "bg-rose-50/90 border-rose-200/50 text-rose-800"
           )}>
             {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <AlertCircle className="w-5 h-5 text-rose-500" />}
             {message.text}
