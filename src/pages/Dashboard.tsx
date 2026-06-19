@@ -48,7 +48,7 @@ export default function Dashboard() {
         <div className="glass-card p-8 flex flex-col items-center gap-4 text-center">
           <AlertTriangle className="w-12 h-12 text-rose-500" />
           <h2 className="text-xl font-bold text-slate-800">Failed to Load Dashboard</h2>
-          <p className="text-slate-500 font-medium max-w-md">There was a problem connecting to the database. Please check your Supabase configuration or try again later.</p>
+          <p className="text-slate-500 font-medium max-w-md">There was a problem connecting to the local database. Please restart the app or try again later.</p>
         </div>
       </div>
     );
