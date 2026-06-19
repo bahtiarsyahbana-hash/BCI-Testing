@@ -84,15 +84,28 @@ export default function ClaimList() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Claim Registered': return 'bg-slate-100 text-slate-700 border-slate-200';
-      case 'Document Pending': return 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'Under Assessment': return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'Under Insurer Review': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
-      case 'Claim Approved': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      case 'Claim Settled': return 'bg-teal-50 text-teal-700 border-teal-200';
-      case 'Claim Rejected': return 'bg-rose-50 text-rose-700 border-rose-200';
-      case 'Claim Closed': return 'bg-gray-100 text-gray-600 border-gray-200';
-      default: return 'bg-slate-100 text-slate-700 border-slate-200';
+      case 'Claim Registered': return 'bg-slate-100 text-slate-700 border-slate-300';
+      case 'Document Pending': return 'bg-amber-50 text-amber-800 border-amber-300';
+      case 'Under Assessment': return 'bg-sky-50 text-sky-800 border-sky-300';
+      case 'Under Insurer Review': return 'bg-cyan-50 text-cyan-800 border-cyan-300';
+      case 'Claim Approved': return 'bg-emerald-50 text-emerald-800 border-emerald-300';
+      case 'Claim Settled': return 'bg-teal-50 text-teal-800 border-teal-300';
+      case 'Claim Rejected': return 'bg-rose-50 text-rose-800 border-rose-300';
+      case 'Claim Closed': return 'bg-gray-100 text-gray-700 border-gray-300';
+      default: return 'bg-slate-100 text-slate-700 border-slate-300';
+    }
+  };
+
+  const getStatusAccent = (status: string) => {
+    switch (status) {
+      case 'Document Pending': return 'bg-amber-400';
+      case 'Under Assessment': return 'bg-sky-500';
+      case 'Under Insurer Review': return 'bg-cyan-500';
+      case 'Claim Approved': return 'bg-emerald-500';
+      case 'Claim Settled': return 'bg-teal-500';
+      case 'Claim Rejected': return 'bg-rose-500';
+      case 'Claim Closed': return 'bg-slate-400';
+      default: return 'bg-slate-500';
     }
   };
 
@@ -141,7 +154,7 @@ export default function ClaimList() {
               placeholder="Search claims, clients, policies..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm"
+              className="w-full rounded-md border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100"
             />
           </div>
           <div className="relative w-full sm:w-auto">
@@ -149,7 +162,7 @@ export default function ClaimList() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full sm:w-auto pl-10 pr-10 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none appearance-none text-sm font-medium text-slate-700 transition-all"
+              className="w-full appearance-none rounded-md border border-slate-300 bg-white py-2.5 pl-10 pr-10 text-sm font-medium text-slate-700 outline-none transition-all focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 sm:w-auto"
             >
               <option value="All">All Statuses</option>
               <option value="Claim Registered">Claim Registered</option>
@@ -167,7 +180,7 @@ export default function ClaimList() {
             <select
               value={insuranceTypeFilter}
               onChange={(e) => setInsuranceTypeFilter(e.target.value)}
-              className="w-full sm:w-auto pl-10 pr-10 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none appearance-none text-sm font-medium text-slate-700 transition-all"
+              className="w-full appearance-none rounded-md border border-slate-300 bg-white py-2.5 pl-10 pr-10 text-sm font-medium text-slate-700 outline-none transition-all focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 sm:w-auto"
             >
               <option value="All">All Types</option>
               {insuranceTypes.map(t => <option key={t} value={t}>{t}</option>)}
@@ -178,7 +191,7 @@ export default function ClaimList() {
             <select
               value={labelFilter}
               onChange={(e) => setLabelFilter(e.target.value)}
-              className="w-full sm:w-auto pl-10 pr-10 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none appearance-none text-sm font-medium text-slate-700 transition-all"
+              className="w-full appearance-none rounded-md border border-slate-300 bg-white py-2.5 pl-10 pr-10 text-sm font-medium text-slate-700 outline-none transition-all focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 sm:w-auto"
             >
               <option value="All">All Label</option>
               <option value="On Insurer">On Insurer</option>
@@ -192,7 +205,7 @@ export default function ClaimList() {
         {!isSupervisor && (
           <Link
             to="/claims/new"
-            className="flex items-center gap-2 bg-indigo-600/90 backdrop-blur-sm text-white px-5 py-2.5 rounded-xl font-medium hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap text-sm border border-indigo-500/50"
+            className="flex items-center gap-2 rounded-md border border-slate-900 bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             New Claim
@@ -202,59 +215,77 @@ export default function ClaimList() {
 
       {/* Table */}
       <div className="glass-card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Claims Register</p>
+            <p className="text-xs text-slate-500">{filteredClaims.length} visible of {claims.length} claims</p>
+          </div>
+          <div className="hidden text-xs font-medium text-slate-500 sm:block">
+            Sorted by latest claim first
+          </div>
+        </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white/40 border-b border-white/20 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                <th className="px-6 py-4">Claim Register Number</th>
-                <th className="px-6 py-4">Client & Policy</th>
-                <th className="px-6 py-4">Insurance Info</th>
-                <th className="px-6 py-4">Amount</th>
-                <th className="px-6 py-4">Status & Label</th>
-                <th className="px-6 py-4 text-right">Action</th>
+          <table className="w-full min-w-[1040px] border-collapse text-left">
+            <thead className="sticky top-0 z-[1]">
+              <tr className="border-b border-slate-300 bg-slate-100 text-xs font-bold uppercase tracking-wider text-slate-600">
+                <th className="w-3 px-0 py-4"></th>
+                <th className="border-r border-slate-200 px-5 py-4">Claim Register Number</th>
+                <th className="border-r border-slate-200 px-5 py-4">Client & Policy</th>
+                <th className="border-r border-slate-200 px-5 py-4">Insurance Info</th>
+                <th className="border-r border-slate-200 px-5 py-4">Amount</th>
+                <th className="border-r border-slate-200 px-5 py-4">Status & Label</th>
+                <th className="px-5 py-4 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/20">
+            <tbody className="divide-y divide-slate-200 bg-white">
               {filteredClaims.map((claim) => {
                 const labelColor = getLabelColor(claim.label || 'On Broker');
                 
                 return (
-                  <tr key={claim.id} className="hover:bg-white/60 transition-colors duration-200 group">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-900">{claim.claim_number}</div>
-                      <div className="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
+                  <tr key={claim.id} className="group even:bg-slate-50/70 hover:bg-cyan-50/50 transition-colors duration-150">
+                    <td className={clsx('w-3 px-0 py-0', getStatusAccent(claim.status))}></td>
+                    <td className="border-r border-slate-200 px-5 py-4 align-top">
+                      <Link to={`/claims/${claim.id}`} className="font-bold text-slate-950 hover:text-cyan-700">
+                        {claim.claim_number}
+                      </Link>
+                      <div className="text-sm text-slate-500 mt-1.5 flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5" />
                         {format(new Date(claim.date_reported), 'dd MMM yyyy')}
                       </div>
+                      <div className="mt-2 text-xs text-slate-500">
+                        Age: {Math.max(differenceInDays(new Date(), new Date(claim.date_reported)), 0)} days
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900">{claim.client_name}</div>
-                      <div className="text-sm text-slate-500 mt-1 font-mono text-xs bg-white/50 backdrop-blur-sm inline-block px-2 py-0.5 rounded border border-white/40">{claim.policy_number}</div>
+                    <td className="border-r border-slate-200 px-5 py-4 align-top">
+                      <div className="max-w-[280px] font-semibold leading-snug text-slate-900">{claim.client_name}</div>
+                      <div className="mt-2 inline-block max-w-[300px] rounded border border-slate-300 bg-slate-50 px-2 py-1 font-mono text-xs text-slate-600">
+                        {claim.policy_number}
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="border-r border-slate-200 px-5 py-4 align-top">
                       <div className="text-sm font-medium text-slate-900">{claim.insurance_type}</div>
                       <div className="text-sm text-slate-500 mt-1">{claim.insurer_name}</div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="border-r border-slate-200 px-5 py-4 align-top">
                       <div className="font-semibold text-slate-900">
                         {new Intl.NumberFormat('en-US', { style: 'currency', currency: claim.currency }).format(claim.claim_amount)}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="border-r border-slate-200 px-5 py-4 align-top">
                       <div className="flex flex-col gap-2 items-start">
-                        <span className={clsx('px-2.5 py-1 rounded-md text-xs font-semibold border backdrop-blur-sm', getStatusColor(claim.status))}>
+                        <span className={clsx('rounded-md border px-2.5 py-1 text-xs font-bold', getStatusColor(claim.status))}>
                           {claim.status}
                         </span>
-                        <span className={clsx('flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold border backdrop-blur-sm', labelColor)}>
+                        <span className={clsx('flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold', labelColor)}>
                           {claim.label || 'On Broker'}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="px-5 py-4 text-right align-top">
+                      <div className="flex items-center justify-end gap-2">
                         <Link
                           to={`/claims/${claim.id}`}
-                          className="inline-flex items-center justify-center p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/80 rounded-lg transition-colors"
+                          className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white p-2 text-slate-600 transition-colors hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
                           title="View Details"
                         >
                           <ChevronRight className="w-5 h-5" />
@@ -262,7 +293,7 @@ export default function ClaimList() {
                         {isSuperadmin && (
                           <button
                             onClick={() => handleDelete(claim.id)}
-                            className="inline-flex items-center justify-center p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50/80 rounded-lg transition-colors"
+                            className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white p-2 text-slate-500 transition-colors hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600"
                             title="Delete Claim"
                           >
                             <Trash2 className="w-5 h-5" />
