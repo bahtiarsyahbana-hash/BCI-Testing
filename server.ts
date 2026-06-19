@@ -165,6 +165,27 @@ function createSupabaseClient() {
 }
 
 function registerSupabaseRoutes(app: express.Express, supabase: SupabaseClient) {
+  app.post('/api/auth/login', async (req, res) => {
+    const { email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    if (!normalizedEmail || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+
+    const { data: user, error } = await supabase.from('users')
+      .select('id, name, email, role')
+      .eq('email', normalizedEmail)
+      .eq('password', password)
+      .single();
+
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    res.json({ user });
+  });
+
   app.get('/api/dashboard', async (req, res) => {
     try {
       const { count: totalActive } = await supabase.from('claims')
@@ -504,6 +525,27 @@ async function startServer() {
     registerSupabaseRoutes(app, createSupabaseClient());
   } else {
     app.use('/uploads', express.static(uploadDir));
+
+  app.post('/api/auth/login', (req, res) => {
+    const { email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    if (!normalizedEmail || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+
+    const user = db.prepare(`
+      SELECT id, name, email, role
+      FROM users
+      WHERE email = ? AND password = ?
+    `).get(normalizedEmail, password) as Row | undefined;
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    res.json({ user });
+  });
 
   app.get('/api/dashboard', (req, res) => {
     try {

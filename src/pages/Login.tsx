@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Lock, Mail, AlertCircle } from 'lucide-react';
-import { clsx } from 'clsx';
+import { ShieldCheck, Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -9,51 +8,89 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    let user = null;
-    if (email === 'admin@broker.com') {
-      user = { id: 1, name: 'System Admin', email, role: 'Superadmin' };
-    } else if (email === 'staff@broker.com') {
-      user = { id: 2, name: 'Broker Staff', email, role: 'Broker Staff' };
-    } else if (email === 'supervisor@broker.com') {
-      user = { id: 3, name: 'Claim Supervisor', email, role: 'Supervisor' };
-    } else {
-      setError('Invalid credentials. Please use one of the demo accounts.');
-      return;
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.user) {
+        setError(data.error || 'Invalid email or password.');
+        return;
+      }
+
+      localStorage.setItem('user', JSON.stringify(data.user));
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Unable to sign in right now.');
     }
-    localStorage.setItem('user', JSON.stringify(user));
-    navigate('/dashboard');
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full overflow-hidden pointer-events-none">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-3xl mix-blend-multiply" />
-        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-emerald-500/10 blur-3xl mix-blend-multiply" />
-      </div>
-
-      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="flex justify-center">
-          <div className="bg-indigo-600 p-3.5 rounded-2xl shadow-lg shadow-indigo-500/30">
-            <ShieldAlert className="w-10 h-10 text-white" />
+    <div className="min-h-screen bg-slate-100 text-slate-900 lg:grid lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,0.7fr)]">
+      <section className="hidden lg:flex flex-col justify-between bg-slate-950 px-12 py-10 text-white">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500 text-slate-950 shadow-sm">
+            <ShieldCheck className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">BCI Claims</p>
+            <h1 className="text-2xl font-bold tracking-tight">Broker Control Center</h1>
           </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-bold text-slate-900 tracking-tight">
-          Welcome back
-        </h2>
-        <p className="mt-2 text-center text-sm text-slate-500">
-          Sign in to your account to continue
-        </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="glass-card py-8 px-4 sm:rounded-2xl sm:px-10">
-          <form className="space-y-6" onSubmit={handleLogin}>
+        <div className="max-w-2xl">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">Claims desk</p>
+          <h2 className="text-5xl font-bold leading-tight tracking-tight">
+            Track every claim, handoff, and settlement from one workspace.
+          </h2>
+          <p className="mt-5 max-w-xl text-base leading-7 text-slate-300">
+            Review active exposure, coordinate document follow-ups, and keep broker, insured, and insurer activity visible.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 border-t border-white/10 pt-6">
+          <div>
+            <p className="text-3xl font-bold text-white">24/7</p>
+            <p className="mt-1 text-sm text-slate-400">Claim visibility</p>
+          </div>
+          <div>
+            <p className="text-3xl font-bold text-white">Live</p>
+            <p className="mt-1 text-sm text-slate-400">Status tracking</p>
+          </div>
+          <div>
+            <p className="text-3xl font-bold text-white">Secure</p>
+            <p className="mt-1 text-sm text-slate-400">Role access</p>
+          </div>
+        </div>
+      </section>
+
+      <main className="flex min-h-screen items-center justify-center px-5 py-10 sm:px-8">
+        <div className="w-full max-w-md">
+          <div className="mb-8 lg:hidden">
+            <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-cyan-300 shadow-sm">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">BCI Claims</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">Broker Control Center</h1>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-950">Sign in</h2>
+              <p className="mt-2 text-sm text-slate-500">Use your assigned broker account to continue.</p>
+            </div>
+
+            <form className="space-y-5" onSubmit={handleLogin}>
             {error && (
-              <div className="p-3 bg-rose-50/80 backdrop-blur-sm border border-rose-200/50 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 shadow-sm">
+              <div className="flex items-start gap-3 rounded-md border border-rose-200 bg-rose-50 p-3">
                 <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                 <p className="text-sm text-rose-700 font-medium">{error}</p>
               </div>
@@ -63,7 +100,7 @@ export default function Login() {
               <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
                 Email address
               </label>
-              <div className="relative rounded-xl shadow-sm">
+              <div className="relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-slate-400" />
                 </div>
@@ -75,8 +112,8 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-11 pr-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all text-slate-900 shadow-sm"
-                  placeholder="you@example.com"
+                  className="block w-full rounded-md border border-slate-300 bg-white py-2.5 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100"
+                  placeholder="name@company.com"
                 />
               </div>
             </div>
@@ -85,7 +122,7 @@ export default function Login() {
               <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-2">
                 Password
               </label>
-              <div className="relative rounded-xl shadow-sm">
+              <div className="relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-slate-400" />
                 </div>
@@ -97,8 +134,8 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-11 pr-4 py-2.5 bg-white/50 border border-white/50 backdrop-blur-sm rounded-xl focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm transition-all text-slate-900 shadow-sm"
-                  placeholder="••••••••"
+                  className="block w-full rounded-md border border-slate-300 bg-white py-2.5 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100"
+                  placeholder="Password"
                 />
               </div>
             </div>
@@ -109,7 +146,7 @@ export default function Login() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-white/50 bg-white/50 rounded cursor-pointer"
+                  className="h-4 w-4 rounded border-slate-300 text-cyan-700 focus:ring-cyan-600"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-600 cursor-pointer">
                   Remember me
@@ -117,7 +154,7 @@ export default function Login() {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">
+                <a href="#" className="font-semibold text-cyan-700 hover:text-cyan-800 transition-colors">
                   Forgot password?
                 </a>
               </div>
@@ -126,39 +163,20 @@ export default function Login() {
             <div>
               <button
                 type="submit"
-                className="glass-button w-full flex justify-center py-2.5 px-4 border border-indigo-500/50 rounded-xl shadow-sm shadow-indigo-200/50 text-sm font-semibold text-white bg-indigo-600/90 hover:bg-indigo-700/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
+                className="flex w-full items-center justify-center gap-2 rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-cyan-100"
               >
                 Sign in
+                <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           </form>
-          
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200/50" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-3 bg-slate-50 text-slate-500 font-medium">Demo Credentials</span>
-              </div>
-            </div>
-            <div className="mt-6 text-sm text-slate-600 space-y-3">
-              <div className="p-3.5 bg-white/40 backdrop-blur-sm rounded-xl border border-white/50 hover:bg-white/60 transition-colors cursor-pointer shadow-sm" onClick={() => { setEmail('admin@broker.com'); setPassword('password123'); }}>
-                <p className="font-bold text-slate-800 mb-0.5">Superadmin</p>
-                <p className="font-mono text-xs text-slate-500">admin@broker.com / password123</p>
-              </div>
-              <div className="p-3.5 bg-white/40 backdrop-blur-sm rounded-xl border border-white/50 hover:bg-white/60 transition-colors cursor-pointer shadow-sm" onClick={() => { setEmail('staff@broker.com'); setPassword('password123'); }}>
-                <p className="font-bold text-slate-800 mb-0.5">Broker Staff</p>
-                <p className="font-mono text-xs text-slate-500">staff@broker.com / password123</p>
-              </div>
-              <div className="p-3.5 bg-white/40 backdrop-blur-sm rounded-xl border border-white/50 hover:bg-white/60 transition-colors cursor-pointer shadow-sm" onClick={() => { setEmail('supervisor@broker.com'); setPassword('password123'); }}>
-                <p className="font-bold text-slate-800 mb-0.5">Supervisor</p>
-                <p className="font-mono text-xs text-slate-500">supervisor@broker.com / password123</p>
-              </div>
-            </div>
           </div>
+
+          <p className="mt-5 text-center text-xs text-slate-500">
+            Access is limited to authorized users.
+          </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
