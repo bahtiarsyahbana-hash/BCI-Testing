@@ -18,5 +18,6 @@ Local claims management app for broker claim tracking.
 
    `npm run dev`
 
-The app uses a local SQLite database at `data/app.db` and stores uploaded documents in `uploads/`.
-No external AI or database credentials are required.
+By default, the app can use a local SQLite database at `data/app.db` and store uploaded documents in `uploads/`.
+Set `DATABASE_PROVIDER=supabase` to use Supabase for the database and document storage instead.
+No external AI credentials are required.

@@ -5,9 +5,11 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { createRequire } from 'module';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const require = createRequire(import.meta.url);
 const Database = require('better-sqlite3');
+const databaseProvider = (process.env.DATABASE_PROVIDER || 'sqlite').toLowerCase();
 
 const dataDir = path.resolve(process.env.DATA_DIR || 'data');
 const uploadDir = path.resolve(process.env.UPLOAD_DIR || 'uploads');
@@ -151,12 +153,357 @@ initializeDatabase();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+function createSupabaseClient() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('DATABASE_PROVIDER=supabase requires SUPABASE_URL and SUPABASE_ANON_KEY.');
+  }
+
+  return createClient(supabaseUrl, supabaseKey);
+}
+
+function registerSupabaseRoutes(app: express.Express, supabase: SupabaseClient) {
+  app.get('/api/dashboard', async (req, res) => {
+    try {
+      const { count: totalActive } = await supabase.from('claims')
+        .select('*', { count: 'exact', head: true })
+        .not('status', 'in', '("Claim Settled","Claim Closed","Claim Rejected","Deleted")');
+
+      const { count: settled } = await supabase.from('claims')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'Claim Settled');
+
+      const { count: underReview } = await supabase.from('claims')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['Under Assessment', 'Under Insurer Review']);
+
+      const { count: rejected } = await supabase.from('claims')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'Claim Rejected');
+
+      const { data: claims } = await supabase.from('claims')
+        .select('label, status, insurer_name, insurance_type')
+        .neq('status', 'Deleted');
+
+      let onInsurer = 0;
+      let onBroker = 0;
+      let onInsured = 0;
+      let settledCount = 0;
+      let closedCancel = 0;
+
+      (claims || []).forEach((claim) => {
+        const label = claim.label || 'On Broker';
+        if (label === 'On Insurer') onInsurer++;
+        else if (label === 'On Broker') onBroker++;
+        else if (label === 'On Insured') onInsured++;
+        else if (label === 'Settled') settledCount++;
+        else if (label === 'Closed/Cancel') closedCancel++;
+      });
+
+      res.json({
+        metrics: {
+          totalActive: totalActive || 0,
+          settled: settled || 0,
+          underReview: underReview || 0,
+          delayed: onInsurer + onBroker + onInsured,
+          rejected: rejected || 0,
+        },
+        label: { onInsurer, onBroker, onInsured, settled: settledCount, closedCancel },
+        charts: {
+          statusChart: groupChart(claims || [], 'status'),
+          insurerChart: groupChart(claims || [], 'insurer_name'),
+          typeChart: groupChart(claims || [], 'insurance_type'),
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+    }
+  });
+
+  app.get('/api/claims', async (req, res) => {
+    const { data, error } = await supabase.from('claims')
+      .select('*')
+      .neq('status', 'Deleted')
+      .order('id', { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+  });
+
+  app.get('/api/claims/:id', async (req, res) => {
+    const { data: claim, error: claimError } = await supabase.from('claims')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (claimError || !claim) return res.status(404).json({ error: 'Claim not found' });
+
+    const { data: activitiesData } = await supabase.from('activities')
+      .select('*')
+      .eq('claim_id', req.params.id)
+      .order('date', { ascending: false });
+
+    const { data: usersData } = await supabase.from('users').select('id, name');
+    const userMap = new Map((usersData || []).map((user) => [user.id, user.name]));
+
+    const activities = (activitiesData || []).map((activity) => ({
+      ...activity,
+      user_name: userMap.get(activity.user_id) || 'Unknown User',
+    }));
+
+    const { data: documents } = await supabase.from('documents')
+      .select('*')
+      .eq('claim_id', req.params.id)
+      .order('upload_date', { ascending: false });
+
+    res.json({ claim, activities, documents: documents || [] });
+  });
+
+  app.post('/api/claims', async (req, res) => {
+    try {
+      const { client_name, policy_number, insurance_type, insurer_name, date_of_loss, date_reported, claim_amount, currency, remarks, user_id, label } = req.body;
+
+      const dateObj = new Date();
+      const year = dateObj.getFullYear();
+      const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+      const monthYear = `${month}${year}`;
+
+      const { data: lastClaimData } = await supabase.from('claims')
+        .select('claim_number')
+        .like('claim_number', `BCI-CLM-${monthYear}-%`)
+        .order('claim_number', { ascending: false })
+        .limit(1);
+
+      const lastClaim = lastClaimData && lastClaimData.length > 0 ? lastClaimData[0] : null;
+      let nextNum = '0001';
+      if (lastClaim) {
+        const lastNum = Number(lastClaim.claim_number.split('-')[3]);
+        nextNum = String(lastNum + 1).padStart(4, '0');
+      }
+
+      const claim_number = `BCI-CLM-${monthYear}-${nextNum}`;
+      const status = 'Claim Registered';
+      const last_update_date = new Date().toISOString();
+
+      const { data: newClaim, error } = await supabase.from('claims').insert([{
+        claim_number,
+        client_name,
+        policy_number,
+        insurance_type,
+        insurer_name,
+        date_of_loss,
+        date_reported,
+        claim_amount,
+        currency,
+        status,
+        last_update_date,
+        remarks,
+        label: label || 'On Broker',
+      }]).select().single();
+
+      if (error) throw error;
+
+      await supabase.from('activities').insert([{
+        claim_id: newClaim.id,
+        date: last_update_date,
+        user_id: user_id || 2,
+        activity: 'Claim Registered',
+        notes: 'New claim created.',
+      }]);
+
+      res.json({ id: newClaim.id, claim_number });
+    } catch (error: any) {
+      console.error('Error creating claim in server:', error);
+      res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+  });
+
+  app.put('/api/claims/:id/amount', async (req, res) => {
+    const { claim_amount, currency, user_id } = req.body;
+    const last_update_date = new Date().toISOString();
+    const updateData: any = { claim_amount, last_update_date };
+    let notes = `Claim amount updated to ${claim_amount}`;
+
+    if (currency) {
+      updateData.currency = currency;
+      notes = `Claim amount updated to ${claim_amount} ${currency}`;
+    }
+
+    const { error } = await supabase.from('claims').update(updateData).eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+
+    await supabase.from('activities').insert([{
+      claim_id: req.params.id,
+      date: last_update_date,
+      user_id: user_id || 2,
+      activity: 'Amount Updated',
+      notes,
+    }]);
+
+    res.json({ success: true });
+  });
+
+  app.put('/api/claims/:id/status', async (req, res) => {
+    const { status, label, notes, user_id, settlement_amount } = req.body;
+    const last_update_date = new Date().toISOString();
+    const updateData: any = { last_update_date };
+
+    if (status) updateData.status = status;
+    if (label) updateData.label = label;
+    if (settlement_amount !== undefined) {
+      updateData.settlement_amount = settlement_amount;
+      if (status === 'Claim Settled') updateData.settlement_date = last_update_date.split('T')[0];
+    }
+
+    const { error } = await supabase.from('claims').update(updateData).eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+
+    let activityNote = notes || '';
+    if (!activityNote) {
+      if (status && label) activityNote = `Status changed to ${status}, Label changed to ${label}`;
+      else if (status) activityNote = `Status changed to ${status}`;
+      else if (label) activityNote = `Label changed to ${label}`;
+    }
+
+    await supabase.from('activities').insert([{
+      claim_id: req.params.id,
+      date: last_update_date,
+      user_id: user_id || 2,
+      activity: 'Status/Label Updated',
+      notes: activityNote,
+    }]);
+
+    res.json({ success: true });
+  });
+
+  app.post('/api/claims/:id/documents', upload.single('file'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+    try {
+      const { document_type } = req.body;
+      const fileExt = req.file.originalname.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const filePath = `${req.params.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      const url = publicUrlData.publicUrl;
+      const upload_date = new Date().toISOString();
+
+      await supabase.from('documents').insert([{
+        claim_id: req.params.id,
+        document_type,
+        filename: req.file.originalname,
+        url,
+        upload_date,
+      }]);
+
+      await supabase.from('activities').insert([{
+        claim_id: req.params.id,
+        date: upload_date,
+        user_id: 2,
+        activity: 'Document Uploaded',
+        notes: `Uploaded ${document_type}: ${req.file.originalname}`,
+      }]);
+
+      res.json({ success: true, url });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      res.status(500).json({ error: error.message || 'Failed to upload document' });
+    }
+  });
+
+  app.post('/api/claims/:id/activities', async (req, res) => {
+    const { activity, notes, user_id } = req.body;
+    const date = new Date().toISOString();
+
+    const { error } = await supabase.from('activities').insert([{
+      claim_id: req.params.id,
+      date,
+      user_id: user_id || 2,
+      activity: activity || 'Note Added',
+      notes,
+    }]);
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  });
+
+  app.delete('/api/claims/:id', async (req, res) => {
+    try {
+      const last_update_date = new Date().toISOString();
+      const { error } = await supabase.from('claims').update({ status: 'Deleted', last_update_date }).eq('id', req.params.id);
+      if (error) throw error;
+
+      await supabase.from('activities').insert([{
+        claim_id: req.params.id,
+        date: last_update_date,
+        user_id: 2,
+        activity: 'Claim Deleted',
+        notes: 'Claim was soft deleted.',
+      }]);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting claim:', error);
+      res.status(500).json({ error: 'Failed to delete claim' });
+    }
+  });
+
+  app.delete('/api/documents/:id', async (req, res) => {
+    try {
+      const { data: doc } = await supabase.from('documents').select('*').eq('id', req.params.id).single();
+      if (doc) {
+        const urlParts = doc.url.split('/public/documents/');
+        if (urlParts.length > 1) {
+          await supabase.storage.from('documents').remove([urlParts[1]]);
+        }
+
+        await supabase.from('documents').delete().eq('id', req.params.id);
+        await supabase.from('activities').insert([{
+          claim_id: doc.claim_id,
+          date: new Date().toISOString(),
+          user_id: 2,
+          activity: 'Document Deleted',
+          notes: `Deleted ${doc.document_type}: ${doc.filename}`,
+        }]);
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      res.status(500).json({ error: 'Failed to delete document' });
+    }
+  });
+
+  app.post('/api/admin/reset', async (req, res) => {
+    res.status(403).json({ error: 'Database reset is disabled.' });
+  });
+}
+
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT || 3000);
 
   app.use(express.json());
-  app.use('/uploads', express.static(uploadDir));
+
+  if (databaseProvider === 'supabase') {
+    registerSupabaseRoutes(app, createSupabaseClient());
+  } else {
+    app.use('/uploads', express.static(uploadDir));
 
   app.get('/api/dashboard', (req, res) => {
     try {
@@ -465,6 +812,7 @@ async function startServer() {
   app.post('/api/admin/reset', (req, res) => {
     res.status(403).json({ error: 'Database reset is disabled.' });
   });
+  }
 
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
@@ -482,7 +830,11 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`Using local SQLite database at ${dbPath}`);
+    if (databaseProvider === 'supabase') {
+      console.log('Using Supabase database provider');
+    } else {
+      console.log(`Using local SQLite database at ${dbPath}`);
+    }
   });
 }
 
